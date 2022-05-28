@@ -1,7 +1,7 @@
 	1 Table
 1. SELECT name, surname FROM students WHERE (score>=4 AND score<=4.5)
 	SELECT * FROM students WHERE (score>=4 AND score<=4.5)
-2. 
+2. SELECT * FROM students GROUP BY n_group=n_group/1000
 3. SELECT * FROM students ORDER BY n_group, name
 4. SELECT * FROM students WHERE score>=4 ORDER BY score DESC
 5. SELECT name, risk FROM hobby WHERE name = 'Футбол' or name = 'Хоккей'

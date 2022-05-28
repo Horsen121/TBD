@@ -29,7 +29,5 @@ CREATE TABLE change(
 	finished_at timestamptz REFERENCES timetable(finished_at),
 	hoster_id integer REFERENCES user(u.id),
 	coef REAL CHECK (coef>=1),
-	wonted_start timestamptz,
-	wonted_finish timestamptz,
 	status boolean
 );
