@@ -180,23 +180,28 @@ END;
 $$;
 
 12. BEGIN;
-	ALTER TABLE people 
-	ADD COLUMN relatives varchar(30); 
-	COMMIT;
+	CREATE TABLE relations (
+  	person_id integer REFERENCES people(id),
+  	rel_id integer REFERENCES people(id),
+  	rel_type VARCHAR(255) NOT NULL);
 END;
 
-13. CREATE OR REPLACE PROCEDURE People_Create(INOUT q_name, q_surname, q_birth_date, q_growth, q_weight, q_eyes, q_hair, q_relatives)
+13. CREATE OR REPLACE PROCEDURE People_Create(INOUT q_name varchar, q_surname varchar, q_birth_date DATE, q_growth real, q_weight real, q_eyes varchar, q_hair varchar, q_rel_id int, q_rel_type varchar)
 LANGUAGE plpgsql
 AS $$
+DECLARE q_p_id;
 BEGIN
-	INSERT INTO people (name, surname, birth_date, growth, weight, eyes, hair, relatives)
-		VALUE(q_name, q_surname, q_birth_date, q_growth, q_weight, q_eyes, q_hair, q_relatives);
+	INSERT INTO people (name, surname, birth_date, growth, weight, eyes, hair)
+		VALUES(q_name, q_surname, q_birth_date, q_growth, q_weight, q_eyes, q_hair)
+		RETURNING p.id INTO q_p_id;
+	INSERT INTO relations(person_id, rel_id, rel_type)
+		VALUES(q_p_id, q_rel_id, q_rel_type);
 END;
 $$;
 
 14. BEGIN;
 	ALTER TABLE people 
-	ADD COLUMN actuality DATE;
+	ADD COLUMN actuality TIMESTAMP;
 	COMMIT;
 END;
 
@@ -206,7 +211,8 @@ AS $$
 BEGIN
 	UPDATE people
     SET growth = q_growth,
-		weight = q_weight
+	weight = q_weight,
+	actuality = NOW()
     WHERE people.id = q_id;
 END;
 $$;
