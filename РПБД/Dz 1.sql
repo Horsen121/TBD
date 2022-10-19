@@ -179,6 +179,7 @@ BEGIN
 END;
 $$;
 
+-- Upd 12-15
 12. BEGIN;
 	CREATE TABLE relations (
   	person_id integer REFERENCES people(id),
