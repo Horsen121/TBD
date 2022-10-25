@@ -179,7 +179,6 @@ BEGIN
 END;
 $$;
 
--- Upd 12
 12. BEGIN;
 	CREATE TABLE relations (
   	person_id integer REFERENCES people(id),
@@ -187,7 +186,6 @@ $$;
   	rel_type VARCHAR(255) NOT NULL);
 END;
 
--- Upd 13
 13. CREATE OR REPLACE PROCEDURE People_Create(INOUT q_name varchar, q_surname varchar, q_birth_date DATE, q_growth real, q_weight real, q_eyes varchar, q_hair varchar, q_rel_id int, q_rel_type varchar)
 LANGUAGE plpgsql
 AS $$
@@ -201,14 +199,12 @@ BEGIN
 END;
 $$;
 
--- Upd 14
 14. BEGIN;
 	ALTER TABLE people 
 	ADD COLUMN actuality TIMESTAMP;
 	COMMIT;
 END;
 
--- Upd 15
 15. CREATE OR REPLACE PROCEDURE People_Actualize(INOUT q_id int, q_growth real, q_weight real)
 LANGUAGE plpgsql
 AS $$
