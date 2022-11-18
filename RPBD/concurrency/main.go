@@ -10,7 +10,7 @@ func main() {
 	opened := scan.Scan("127.0.0.1")
 
 	fmt.Println("Opened ports:")
-	for el := range opened {
-		fmt.Println(el)
+	for i := 0; i < len(opened); i++ {
+		fmt.Println(opened[i])
 	}
 }

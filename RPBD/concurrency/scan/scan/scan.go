@@ -8,11 +8,12 @@ import (
 )
 
 // TODO: реализация в main не возвращает слайс открытых портов
-// необходимо реализовать функцию Scan по по аналогии с кодом в main.go
+// необходимо реализовать функцию Scan по аналогии с кодом в main.go
 // только её нужно дополнить, чтобы вернуть слайс открытых портов
 // отсортированных по возрастанию
 
-func worker(address string, ports chan int, wg *sync.WaitGroup, opened chan<- int) {
+func worker(address string, ports chan int, wg *sync.WaitGroup, opened *[]int) {
+	mu := sync.Mutex{}
 	for p := range ports {
 		wg.Done()
 		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", address, p))
@@ -21,8 +22,9 @@ func worker(address string, ports chan int, wg *sync.WaitGroup, opened chan<- in
 		}
 		conn.Close()
 
-		fmt.Println("port opened:", p)
-		opened <- p
+		mu.Lock()
+		*opened = append(*opened, p)
+		mu.Unlock()
 	}
 }
 
@@ -30,10 +32,9 @@ func Scan(address string) []int {
 	ports := make(chan int, 200)
 	wg := sync.WaitGroup{}
 	var open []int
-	opened := make(chan int)
 
 	for i := 0; i < cap(ports); i++ {
-		go worker(address, ports, &wg, opened)
+		go worker(address, ports, &wg, &open)
 	}
 
 	for i := 1; i < 10000; i++ {
@@ -43,14 +44,8 @@ func Scan(address string) []int {
 
 	wg.Wait()
 	close(ports)
-	close(opened)
 
-	for el := range opened {
-		open = append(open, el)
-	}
-	sort.Slice(open, func(i, j int) bool {
-		return open[i] < open[j]
-	})
+	sort.Ints(open)
 
 	return open
 }
