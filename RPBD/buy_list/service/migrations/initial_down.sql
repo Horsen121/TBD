@@ -1,8 +1,8 @@
 BEGIN;
 
-CREATE TABLE users;
-CREATE TABLE productList;
-CREATE TABLE buyList;
-CREATE TABLE lastProduct;
+DROP TABLE users;
+DROP TABLE productlist;
+DROP TABLE buylist;
+DROP TABLE lastproduct;
 
 COMMIT;

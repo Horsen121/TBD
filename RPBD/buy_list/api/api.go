@@ -11,59 +11,46 @@ var Buttons = tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButton("Open product"),
 	),
 	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("Change status"),
+		tgbotapi.NewKeyboardButton("Buy list"),
 		tgbotapi.NewKeyboardButton("Product list"),
 		tgbotapi.NewKeyboardButton("Last products"),
+	),
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("Change status"),
 		tgbotapi.NewKeyboardButton("Stats"),
 	),
 )
 
-// var AddToList = tgbotapi.NewInlineKeyboardMarkup(
-//	// tgbotapi.NewInlineKeyboardRow(
-//	// 	tgbotapi.NewInlineKeyboardButtonData("Name", "name"),
-//	// 	tgbotapi.NewInlineKeyboardButtonData("Weight", "weight"),
-//	// 	tgbotapi.NewInlineKeyboardButtonData("Notice", "notice"),
-//	// ),
-//	tgbotapi.NewInlineKeyboardRow(
-//		tgbotapi.NewInlineKeyboardButtonData("Add to buy list", "ToList"),
-//	),
-//
-// )
+var AddToList = tgbotapi.NewInlineKeyboardMarkup(
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Cancel", "cancel"),
+	),
+)
 
 var AddToRefrigerator = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("From list", "query"), /// query to Product list
-		tgbotapi.NewInlineKeyboardButtonData("Another", "product"),
-		// tgbotapi.NewInlineKeyboardButtonData("Time", "time"),
+		tgbotapi.NewInlineKeyboardButtonData("From list", "addFromList"),
+		tgbotapi.NewInlineKeyboardButtonData("Another", "addAnotherProduct"),
 	),
-	// tgbotapi.NewInlineKeyboardRow(
-	// 	tgbotapi.NewInlineKeyboardButtonData("Add", "ToRefrigerator"), // if form list -> delete product from buyList
-	// ),
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Cancel", "cancel"),
+	),
 )
 
-// var OpenProduct = tgbotapi.NewInlineKeyboardMarkup(
-// 	tgbotapi.NewInlineKeyboardRow(
-// 		tgbotapi.NewInlineKeyboardButtonData("Product", "query"), /// query to Product list
-// 		tgbotapi.NewInlineKeyboardButtonData("New time", "time"),
-// 	),
-// 	tgbotapi.NewInlineKeyboardRow(
-// 		tgbotapi.NewInlineKeyboardButtonData("Open", "Open"), // change time
-// 	),
-// )
+var OpenProduct = tgbotapi.NewInlineKeyboardMarkup(
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Cancel", "cancel"),
+	),
+)
 
-// var ChangeStatus = tgbotapi.NewInlineKeyboardMarkup(
-// 	tgbotapi.NewInlineKeyboardRow(
-// 		tgbotapi.NewInlineKeyboardButtonData("Product", "product"), /// query to productList
-// 	),
-// 	tgbotapi.NewInlineKeyboardRow(
-// 		tgbotapi.NewInlineKeyboardButtonData("Done", "Done"), // change status to '1'
-// 		tgbotapi.NewInlineKeyboardButtonData("Cast", "Cast"), // change status to '0'
-// 	),
-// )
+var ChangeStatus = tgbotapi.NewInlineKeyboardMarkup(
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Cancel", "cancel"),
+	),
+)
 
-// var Stats = tgbotapi.NewInlineKeyboardMarkup(
-// 	tgbotapi.NewInlineKeyboardRow(
-// 		tgbotapi.NewInlineKeyboardButtonData("First date", "query"),  /// query to lastProduct
-// 		tgbotapi.NewInlineKeyboardButtonData("Second date", "query"), /// query to lastProduct
-// 	),
-// )
+var Stats = tgbotapi.NewInlineKeyboardMarkup(
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Cancel", "cancel"),
+	),
+)

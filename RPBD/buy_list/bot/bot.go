@@ -2,6 +2,7 @@ package bot
 
 import (
 	"log"
+	"strings"
 
 	"github/Horsen121/TBD/RPBD/buy_list/api"
 	"github/Horsen121/TBD/RPBD/buy_list/funcs"
@@ -22,23 +23,22 @@ func Start() {
 
 	bot.Debug = true
 
-	user := bot.Self.UserName
-	log.Printf("Authorized on account %s", user)
+	log.Printf("Authorized on account %s", bot.Self.UserName)
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
 	toBuyList := false
-	toProductList := false
+	blToPL := false
+	anToPL := false
 	openProduct := false
 	changeStatus := false
-	getProductList := false
-	getLastProductList := false
-	getStats := false
+	stats := false
 
 	updates := bot.GetUpdatesChan(u)
 
 	for update := range updates {
+		user := update.Message.From.UserName
 		if update.Message != nil {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
 			msg.ReplyToMessageID = update.Message.MessageID
@@ -47,42 +47,48 @@ func Start() {
 			switch update.Message.Text {
 			case "Add at list":
 				toBuyList = true
-				msg.Text = `Enter the name of the product, its weight and the time of the purchase reminder (if necessary) 
-								in the input line (through a space) and send the message`
-				// msg.ReplyMarkup = api.AddToList
+				msg.Text = `Enter the name of the product, its weight and the time of the purchase reminder (if necessary) in the input line (through a space) and send the message`
+				msg.ReplyMarkup = api.AddToList
 			case "Add at refrigerator":
-				toProductList = true
 				msg.Text = `Where do you want to put the product from? (click the appropriate button)
-								\nEnter the name of the product and its best before date 
-								in the input line (through a space) and send the message`
+				Enter the name of the product and its best before date in the input line (through a space) and send the message`
 				msg.ReplyMarkup = api.AddToRefrigerator
 			case "Open product":
 				openProduct = true
-				msg.Text = "Select product from the list and its new expiration date"
-				// msg.ReplyMarkup = api.OpenProduct
+				msg.Text = `Select product from the list and its new expiration date
+				Enter the name of the product and its new best before date in the input line (through a space) and send the message`
+				msg.ReplyMarkup = api.OpenProduct
 			case "Change status":
 				changeStatus = true
-				msg.Text = "Select product from the list and select its status"
-				// msg.ReplyMarkup = api.ChangeStatus
+				msg.Text = `Select product from the list and select its status
+				Enter the name of the product and its new status in the input line (through a space) and send the message`
+				msg.ReplyMarkup = api.ChangeStatus
+			case "Buy list":
+				msg.Text = funcs.GetBuyList(s, user)
 			case "Product list":
-				getProductList = true
-				msg.Text = "" // query
+				msg.Text = funcs.GetProductList(s, user)
 			case "Last products":
-				getLastProductList = true
-				msg.Text = "" // query lastProducts
+				msg.Text = funcs.GetLastProducts(s, user)
 			case "Stats":
-				getStats = true
-				msg.Text = "" // query to lastProducts
+				stats = true
+				msg.Text = `Shows stats of products for the specified period
+				Enter the first and second date in the input line (through a space) and send the message`
 			default:
-				var err error
 				if toBuyList {
 					// func ToBuyList
-
+					data := strings.Split(msg.Text, " ")
+					if err := funcs.AddToBuyList(s, data[0], data[1], data[2], user); err != "" {
+						msg.Text = err
+					}
 					toBuyList = false
-				} else if toProductList {
+				} else if blToPL {
 					// func ToProductList
 
-					toProductList = false
+					blToPL = false
+				} else if anToPL {
+					// func ToProductList
+
+					anToPL = false
 				} else if openProduct {
 					// func OpenProduct
 
@@ -91,23 +97,12 @@ func Start() {
 					// func ChangeStatus
 
 					changeStatus = false
-				} else if getProductList {
-					// func GetProductList
-					msg.Text, err = funcs.GetProductList(s)
-					getProductList = false
-				} else if getLastProductList {
-					// func GetLastProductList
-
-					getLastProductList = false
-				} else if getStats {
-					// func GetStats
-
-					getStats = false
+				} else if stats {
+					data := strings.Split(msg.Text, " ")
+					msg.Text = funcs.GetStats(s, user, data[0], data[1])
+					stats = false
 				} else {
 					msg.Text = "I don't know this command :("
-				}
-				if err != nil {
-					msg.Text = "I'm sorry, but an error has occurred :("
 				}
 			}
 
@@ -115,13 +110,30 @@ func Start() {
 		} else if update.CallbackQuery != nil {
 			// Respond to the callback query, telling Telegram to show the user
 			// a message with the data received.
-			callback := tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data)
-			if _, err := bot.Request(callback); err != nil {
-				panic(err)
+			// callback := tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data)
+			// if _, err := bot.Request(callback); err != nil {
+			// 	panic(err)
+			// }
+			msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Data)
+
+			switch update.CallbackQuery.Data {
+			case "addFromList":
+				blToPL = true
+				msg.Text = funcs.GetProductList(s, user)
+			case "addAnotherProduct":
+				anToPL = true
+			case "cancel":
+				toBuyList = false
+				blToPL = false
+				anToPL = false
+				openProduct = false
+				changeStatus = false
+				stats = false
+
+				msg.Text = "Operation was canceled."
 			}
 
 			// And finally, send a message containing the data received.
-			msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Data)
 			if _, err := bot.Send(msg); err != nil {
 				panic(err)
 			}
