@@ -3,11 +3,13 @@ package bot
 import (
 	"log"
 	"strings"
+	"time"
 
 	"github/Horsen121/TBD/RPBD/buy_list/api"
 	"github/Horsen121/TBD/RPBD/buy_list/funcs"
 	"github/Horsen121/TBD/RPBD/buy_list/service/conn"
 
+	"github.com/go-co-op/gocron"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -20,9 +22,9 @@ func Start() {
 	if err != nil {
 		log.Panic(err)
 	}
+	scheduler := gocron.NewScheduler(time.UTC)
 
 	bot.Debug = true
-
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
 	u := tgbotapi.NewUpdate(0)
@@ -39,6 +41,8 @@ func Start() {
 
 	for update := range updates {
 		user := update.Message.From.UserName
+		chechBuyList, _ := scheduler.Every(1).Day().At("12:00;18:00").DoWithJobDetails(funcs.CheckBuyList, s, user)
+		chechProductList, _ := scheduler.Every(1).Day().At("12:00;18:00").DoWithJobDetails(funcs.CheckProductList, s, user)
 		if update.Message != nil {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
 			msg.ReplyToMessageID = update.Message.MessageID
@@ -47,21 +51,24 @@ func Start() {
 			switch update.Message.Text {
 			case "Add at list":
 				toBuyList = true
-				msg.Text = `Enter the name of the product, its weight and the time of the purchase reminder (if necessary) in the input line (through a space) and send the message`
+				msg.Text = `Enter the name of the product, its weight and the time of the purchase reminder (if necessary) in format 2022-11-25 in the input line (through a space) and send the message`
 				msg.ReplyMarkup = api.AddToList
 			case "Add at refrigerator":
 				msg.Text = `Where do you want to put the product from? (click the appropriate button)
-				Enter the name of the product and its best before date in the input line (through a space) and send the message`
+				Enter the name of the product and its best before date (in format 2022-11-25) in the input line (through a space) and send the message`
 				msg.ReplyMarkup = api.AddToRefrigerator
 			case "Open product":
 				openProduct = true
 				msg.Text = `Select product from the list and its new expiration date
-				Enter the name of the product and its new best before date in the input line (through a space) and send the message`
+				Enter the name of the product and its new best before date (in format 2022-11-25) in the input line (through a space) and send the message
+				
+				`
+				msg.Text += funcs.GetProductList(s, user)
 				msg.ReplyMarkup = api.OpenProduct
 			case "Change status":
 				changeStatus = true
 				msg.Text = `Select product from the list and select its status
-				Enter the name of the product and its new status in the input line (through a space) and send the message`
+				Enter the name of the product and its new status ("done" or "cast") in the input line (through a space) and send the message`
 				msg.ReplyMarkup = api.ChangeStatus
 			case "Buy list":
 				msg.Text = funcs.GetBuyList(s, user)
@@ -72,34 +79,63 @@ func Start() {
 			case "Stats":
 				stats = true
 				msg.Text = `Shows stats of products for the specified period
-				Enter the first and second date in the input line (through a space) and send the message`
+				Enter the first and second date in the input line (through a space) and send the message
+				(if you if you don't need some date, specify -1)`
 			default:
 				if toBuyList {
 					// func ToBuyList
 					data := strings.Split(msg.Text, " ")
-					if err := funcs.AddToBuyList(s, data[0], data[1], data[2], user); err != "" {
-						msg.Text = err
+					if len(data) == 3 {
+						if err := funcs.AddToBuyList(s, data[0], data[1], data[2], user); err != "" {
+							msg.Text = err
+						}
+					} else if len(data) == 2 {
+						if err := funcs.AddToBuyList(s, data[0], data[1], "-1", user); err != "" {
+							msg.Text = err
+						}
 					}
+					msg.Text = "Product added successfully"
+
 					toBuyList = false
 				} else if blToPL {
 					// func ToProductList
+					data := strings.Split(msg.Text, " ")
+					if err := funcs.AddToProductList(s, data[0], data[1], user, "bl"); err != "" {
+						msg.Text = err
+					}
 
+					msg.Text = "Product added successfully"
 					blToPL = false
 				} else if anToPL {
 					// func ToProductList
+					data := strings.Split(msg.Text, " ")
+					if err := funcs.AddToProductList(s, data[0], data[1], user, "-1"); err != "" {
+						msg.Text = err
+					}
 
+					msg.Text = "Product added successfully"
 					anToPL = false
 				} else if openProduct {
 					// func OpenProduct
+					data := strings.Split(msg.Text, " ")
+					if err := funcs.OpenProduct(s, data[0], data[1], user); err != "" {
+						msg.Text = err
+					}
 
+					msg.Text = "Product's status added successfully"
 					openProduct = false
 				} else if changeStatus {
 					// func ChangeStatus
+					data := strings.Split(msg.Text, " ")
+					if err := funcs.ChangeStatus(s, data[0], data[1], user); err != "" {
+						msg.Text = err
+					}
 
+					msg.Text = "Product's status added successfully"
 					changeStatus = false
 				} else if stats {
 					data := strings.Split(msg.Text, " ")
-					msg.Text = funcs.GetStats(s, user, data[0], data[1])
+					msg.Text = funcs.GetStats(s, data[0], data[1], user)
 					stats = false
 				} else {
 					msg.Text = "I don't know this command :("
@@ -114,12 +150,12 @@ func Start() {
 			// if _, err := bot.Request(callback); err != nil {
 			// 	panic(err)
 			// }
-			msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Data)
+			msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "")
 
 			switch update.CallbackQuery.Data {
 			case "addFromList":
 				blToPL = true
-				msg.Text = funcs.GetProductList(s, user)
+				msg.Text = funcs.GetBuyList(s, user)
 			case "addAnotherProduct":
 				anToPL = true
 			case "cancel":
