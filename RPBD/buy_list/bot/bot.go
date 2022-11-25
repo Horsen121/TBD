@@ -3,13 +3,11 @@ package bot
 import (
 	"log"
 	"strings"
-	"time"
 
 	"github/Horsen121/TBD/RPBD/buy_list/api"
 	"github/Horsen121/TBD/RPBD/buy_list/funcs"
 	"github/Horsen121/TBD/RPBD/buy_list/service/conn"
 
-	"github.com/go-co-op/gocron"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -22,7 +20,7 @@ func Start() {
 	if err != nil {
 		log.Panic(err)
 	}
-	scheduler := gocron.NewScheduler(time.UTC)
+	// scheduler := gocron.NewScheduler(time.UTC)
 
 	bot.Debug = true
 	log.Printf("Authorized on account %s", bot.Self.UserName)
@@ -41,8 +39,8 @@ func Start() {
 
 	for update := range updates {
 		user := update.Message.From.UserName
-		chechBuyList, _ := scheduler.Every(1).Day().At("12:00;18:00").DoWithJobDetails(funcs.CheckBuyList, s, user)
-		chechProductList, _ := scheduler.Every(1).Day().At("12:00;18:00").DoWithJobDetails(funcs.CheckProductList, s, user)
+		// chechBuyList, _ := scheduler.Every(1).Day().At("12:00;18:00").DoWithJobDetails(funcs.CheckBuyList, s, user)
+		// chechProductList, _ := scheduler.Every(1).Day().At("12:00;18:00").DoWithJobDetails(funcs.CheckProductList, s, user)
 		if update.Message != nil {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
 			msg.ReplyToMessageID = update.Message.MessageID
