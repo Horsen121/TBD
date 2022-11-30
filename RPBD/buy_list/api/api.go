@@ -23,34 +23,34 @@ var Buttons = tgbotapi.NewReplyKeyboard(
 
 var AddToList = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Cancel", "cancel"),
+		tgbotapi.NewInlineKeyboardButtonData("Cancel", "Cancel"),
 	),
 )
 
-var AddToRefrigerator = tgbotapi.NewInlineKeyboardMarkup(
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("From list", "addFromList"),
-		tgbotapi.NewInlineKeyboardButtonData("Another", "addAnotherProduct"),
+var AddToRefrigerator = tgbotapi.NewReplyKeyboard(
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("From list"),
+		tgbotapi.NewKeyboardButton("Another"),
 	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Cancel", "cancel"),
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("Cancel"),
 	),
 )
 
 var OpenProduct = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Cancel", "cancel"),
+		tgbotapi.NewInlineKeyboardButtonData("Cancel", "Cancel"),
 	),
 )
 
 var ChangeStatus = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Cancel", "cancel"),
+		tgbotapi.NewInlineKeyboardButtonData("Cancel", "Cancel"),
 	),
 )
 
 var Stats = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Cancel", "cancel"),
+		tgbotapi.NewInlineKeyboardButtonData("Cancel", "Cancel"),
 	),
 )

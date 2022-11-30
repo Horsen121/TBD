@@ -20,10 +20,11 @@ func Start() {
 	if err != nil {
 		log.Panic(err)
 	}
-	// scheduler := gocron.NewScheduler(time.UTC)
 
 	bot.Debug = true
 	log.Printf("Authorized on account %s", bot.Self.UserName)
+
+	funcs.Sheduling(bot, s)
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -39,8 +40,7 @@ func Start() {
 
 	for update := range updates {
 		user := update.Message.From.UserName
-		// chechBuyList, _ := scheduler.Every(1).Day().At("12:00;18:00").DoWithJobDetails(funcs.CheckBuyList, s, user)
-		// chechProductList, _ := scheduler.Every(1).Day().At("12:00;18:00").DoWithJobDetails(funcs.CheckProductList, s, user)
+
 		if update.Message != nil {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
 			msg.ReplyToMessageID = update.Message.MessageID
@@ -66,7 +66,9 @@ func Start() {
 			case "Change status":
 				changeStatus = true
 				msg.Text = `Select product from the list and select its status
-				Enter the name of the product and its new status ("done" or "cast") in the input line (through a space) and send the message`
+				Enter the name of the product and its new status ("done" or "cast") in the input line (through a space) and send the message
+				`
+				msg.Text += funcs.GetProductList(s, user)
 				msg.ReplyMarkup = api.ChangeStatus
 			case "Buy list":
 				msg.Text = funcs.GetBuyList(s, user)
@@ -79,6 +81,20 @@ func Start() {
 				msg.Text = `Shows stats of products for the specified period
 				Enter the first and second date in the input line (through a space) and send the message
 				(if you if you don't need some date, specify -1)`
+			case "From list":
+				blToPL = true
+				msg.Text = funcs.GetBuyList(s, user)
+			case "Another":
+				anToPL = true
+			case "Cancel":
+				toBuyList = false
+				blToPL = false
+				anToPL = false
+				openProduct = false
+				changeStatus = false
+				stats = false
+
+				msg.Text = "Operation was canceled."
 			default:
 				if toBuyList {
 					// func ToBuyList
@@ -141,36 +157,6 @@ func Start() {
 			}
 
 			bot.Send(msg)
-		} else if update.CallbackQuery != nil {
-			// Respond to the callback query, telling Telegram to show the user
-			// a message with the data received.
-			// callback := tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data)
-			// if _, err := bot.Request(callback); err != nil {
-			// 	panic(err)
-			// }
-			msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "")
-
-			switch update.CallbackQuery.Data {
-			case "addFromList":
-				blToPL = true
-				msg.Text = funcs.GetBuyList(s, user)
-			case "addAnotherProduct":
-				anToPL = true
-			case "cancel":
-				toBuyList = false
-				blToPL = false
-				anToPL = false
-				openProduct = false
-				changeStatus = false
-				stats = false
-
-				msg.Text = "Operation was canceled."
-			}
-
-			// And finally, send a message containing the data received.
-			if _, err := bot.Send(msg); err != nil {
-				panic(err)
-			}
 		}
 	}
 }
