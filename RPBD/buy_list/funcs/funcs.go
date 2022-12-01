@@ -13,14 +13,33 @@ import (
 var schedulerBL *gocron.Scheduler
 var schedulerPL *gocron.Scheduler
 
+func Start(s *conn.Store, user string, id int64) string {
+	ischeated := false
+	users := s.GetUsers()
+	for _, u := range users {
+		if u.Name == user {
+			ischeated = true
+		}
+	}
+	if !ischeated {
+		err := s.AddUser(user, id)
+		if err != nil {
+			return "funcs: I'm sorry, but an error has occurred :("
+		}
+	}
+
+	return `Hello! I am a bot that will help you keep track of products from purchase to use.
+				To start using me, click on the appropriate button and follow the instructions.`
+}
+
 func AddToBuyList(s *conn.Store, name string, weight string, reminder string, user string) string {
 	_, err := time.Parse("2006-01-02", reminder)
 	if err != nil {
-		return fmt.Sprintf("err: %s", err.Error()) // "funcs: I'm sorry, but an error has occurred :("
+		return "funcs: I'm sorry, but an error has occurred :("
 	}
 
 	if err := s.AddProductToBuyList(name, weight, reminder, user); err != nil {
-		return fmt.Sprintf("found err: %s", err.Error())
+		return "funcs: I'm sorry, but an error has occurred :("
 	}
 
 	return ""
@@ -29,15 +48,15 @@ func AddToBuyList(s *conn.Store, name string, weight string, reminder string, us
 func AddToProductList(s *conn.Store, name string, data string, user string, place string) string {
 	_, err := time.Parse("2006-01-02", data)
 	if err != nil {
-		return fmt.Sprintf("err: %s", err.Error()) // "funcs: I'm sorry, but an error has occurred :("
+		return "funcs: I'm sorry, but an error has occurred :("
 	}
 
 	if err := s.AddProductToProductList(name, data, user); err != nil {
-		return fmt.Sprintf("found err: %s", err.Error())
+		return "funcs: I'm sorry, but an error has occurred :("
 	}
 	if place == "bl" {
 		if err := s.DeleteProductFromBuyList(name, user); err != nil {
-			return fmt.Sprintf("found err: %s", err.Error())
+			return "funcs: I'm sorry, but an error has occurred :("
 		}
 	}
 
@@ -46,10 +65,10 @@ func AddToProductList(s *conn.Store, name string, data string, user string, plac
 
 func ChangeStatus(s *conn.Store, name string, status string, user string) string {
 	if err := s.AddProductToLastList(name, status, user); err != nil {
-		return fmt.Sprintf("found err: %s", err.Error())
+		return "funcs: I'm sorry, but an error has occurred :("
 	}
 	if err := s.DeleteProductFromProductList(name, user); err != nil {
-		return fmt.Sprintf("found err: %s", err.Error())
+		return "funcs: I'm sorry, but an error has occurred :("
 	}
 
 	return ""
@@ -57,7 +76,7 @@ func ChangeStatus(s *conn.Store, name string, status string, user string) string
 
 func OpenProduct(s *conn.Store, name string, data string, user string) string {
 	if err := s.ChangeProductFromProductList(name, data, user); err != nil {
-		return fmt.Sprintf("found err: %s", err.Error())
+		return "funcs: I'm sorry, but an error has occurred :("
 	}
 
 	return ""
@@ -67,7 +86,7 @@ func GetBuyList(s *conn.Store, user string) string {
 	var res string
 	products, err := s.GetBuyList(user, "-1")
 	if err != nil {
-		res = fmt.Sprintf("err: %s", err.Error()) //"I'm sorry, but an error has occurred :("
+		res = "funcs: I'm sorry, but an error has occurred :("
 	}
 	if len(products) == 0 {
 		return "List is empty"
@@ -85,7 +104,7 @@ func GetProductList(s *conn.Store, user string) string {
 	var res string
 	products, err := s.GetProductList(user, "-1")
 	if err != nil {
-		res = fmt.Sprintf("err: %s", err.Error()) //"I'm sorry, but an error has occurred :("
+		res = "funcs: I'm sorry, but an error has occurred :("
 	}
 	if len(products) == 0 {
 		return "List is empty"
@@ -103,7 +122,7 @@ func GetLastProducts(s *conn.Store, user string) string {
 	var res string
 	products, err := s.GetLastList(user, "-1", "-1")
 	if err != nil {
-		res = fmt.Sprintf("found err: %s", err.Error()) //"I'm sorry, but an error has occurred :("
+		res = "funcs: I'm sorry, but an error has occurred :("
 	}
 	if len(products) == 0 {
 		return "List is empty"
@@ -124,7 +143,7 @@ func GetStats(s *conn.Store, date1 string, date2 string, user string) string {
 	var done, cast int
 	products, err := s.GetLastList(user, date1, date2)
 	if err != nil {
-		return "I'm sorry, but an error has occurred :("
+		return "funcs: I'm sorry, but an error has occurred :("
 	}
 	if len(products) == 0 {
 		return "List is empty"

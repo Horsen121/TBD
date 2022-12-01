@@ -95,6 +95,8 @@ func Start() {
 				stats = false
 
 				msg.Text = "Operation was canceled."
+			case "/start":
+				msg.Text = funcs.Start(s, user, msg.ChatID)
 			default:
 				if toBuyList {
 					// func ToBuyList
