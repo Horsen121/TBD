@@ -1,7 +1,9 @@
 package bot
 
 import (
+	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"github/Horsen121/TBD/RPBD/buy_list/api"
@@ -9,14 +11,21 @@ import (
 	"github/Horsen121/TBD/RPBD/buy_list/service/conn"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/joho/godotenv"
 )
 
 func Start() {
-	bot, err := tgbotapi.NewBotAPI(`${TOKEN}`)
+	if err := godotenv.Load(); err != nil {
+		log.Print("No .env file found")
+	}
+
+	bot, err := tgbotapi.NewBotAPI(os.Getenv("TOKEN"))
 	if err != nil {
 		log.Panic(err)
 	}
-	s, err := conn.NewStore("postgres://`${DBUSER}`:`${DBPASSWORD}`@`${DBHOST}`:`${DBPORT}`/testdb?sslmode=disable")
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", os.Getenv("DBNAME"), os.Getenv("DBPASSWORD"),
+		os.Getenv("DBHOST"), os.Getenv("DBPORT"), os.Getenv("DBUSER"))
+	s, err := conn.NewStore(connStr)
 	if err != nil {
 		log.Panic(err)
 	}
