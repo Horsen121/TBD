@@ -15,7 +15,11 @@ var schedulerPL *gocron.Scheduler
 
 func Start(s *conn.Store, user string, id int64) string {
 	ischeated := false
-	users := s.GetUsers()
+	users, err := s.GetUsers()
+	if err != nil {
+		return "funcs: I'm sorry, but an error has occurred :("
+	}
+
 	for _, u := range users {
 		if u.Name == user {
 			ischeated = true
@@ -64,7 +68,12 @@ func AddToProductList(s *conn.Store, name string, data string, user string, plac
 }
 
 func ChangeStatus(s *conn.Store, name string, status string, user string) string {
-	if err := s.AddProductToLastList(name, status, user); err != nil {
+	stat := false
+	if status == "done" {
+		stat = true
+	}
+
+	if err := s.AddProductToLastList(name, stat, user); err != nil {
 		return "funcs: I'm sorry, but an error has occurred :("
 	}
 	if err := s.DeleteProductFromProductList(name, user); err != nil {
@@ -165,7 +174,7 @@ func Sheduling(bot *tgbotapi.BotAPI, s *conn.Store) {
 	if err != nil {
 		panic(err)
 	}
-	users := s.GetUsers()
+	users, _ := s.GetUsers()
 	for _, u := range users {
 		user := u.Name
 		chatId := u.Id
