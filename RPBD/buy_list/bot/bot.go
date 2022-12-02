@@ -12,11 +12,11 @@ import (
 )
 
 func Start() {
-	bot, err := tgbotapi.NewBotAPI("5757439968:AAEfKHe7vdACwxXayAGLsq20Z0DQxD64Cq4")
+	bot, err := tgbotapi.NewBotAPI(`${TOKEN}`)
 	if err != nil {
 		log.Panic(err)
 	}
-	s, err := conn.NewStore("postgres://mitiushin:PgDmnANIME10@95.217.232.188:7777/mitiushin") // TODO: Change address to Docker
+	s, err := conn.NewStore("postgres://`${DBUSER}`:`${DBPASSWORD}`@`${DBHOST}`:`${DBPORT}`/testdb?sslmode=disable")
 	if err != nil {
 		log.Panic(err)
 	}

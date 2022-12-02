@@ -21,6 +21,8 @@ services:
       - POSTGRES_DB=${DBNAME}
       - POSTGRES_USER=${DBUSER}
       - POSTFRES_PASSWORD=${DBPASSWORD}
+      - POSTGRES_HOST=${DBHOST}
+      - POSTFRES_PORT=${DBPORT}
 
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
