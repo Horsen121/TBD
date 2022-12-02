@@ -21,9 +21,9 @@ var Buttons = tgbotapi.NewReplyKeyboard(
 	),
 )
 
-var AddToList = tgbotapi.NewInlineKeyboardMarkup(
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Cancel", "Cancel"),
+var Cancel = tgbotapi.NewReplyKeyboard(
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("Cancel"),
 	),
 )
 
@@ -34,23 +34,5 @@ var AddToRefrigerator = tgbotapi.NewReplyKeyboard(
 	),
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("Cancel"),
-	),
-)
-
-var OpenProduct = tgbotapi.NewInlineKeyboardMarkup(
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Cancel", "Cancel"),
-	),
-)
-
-var ChangeStatus = tgbotapi.NewInlineKeyboardMarkup(
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Cancel", "Cancel"),
-	),
-)
-
-var Stats = tgbotapi.NewInlineKeyboardMarkup(
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Cancel", "Cancel"),
 	),
 )

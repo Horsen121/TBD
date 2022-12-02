@@ -50,7 +50,7 @@ func Start() {
 			case "Add at list":
 				toBuyList = true
 				msg.Text = `Enter the name of the product, its weight and the time of the purchase reminder (if necessary) in format 2022-11-25 in the input line (through a space) and send the message`
-				msg.ReplyMarkup = api.AddToList
+				msg.ReplyMarkup = api.Cancel
 			case "Add at refrigerator":
 				msg.Text = `Where do you want to put the product from? (click the appropriate button)
 				Enter the name of the product and its best before date (in format 2022-11-25) in the input line (through a space) and send the message`
@@ -62,14 +62,14 @@ func Start() {
 				
 				`
 				msg.Text += funcs.GetProductList(s, user)
-				msg.ReplyMarkup = api.OpenProduct
+				msg.ReplyMarkup = api.Cancel
 			case "Change status":
 				changeStatus = true
 				msg.Text = `Select product from the list and select its status
 				Enter the name of the product and its new status ("done" or "cast") in the input line (through a space) and send the message
 				`
 				msg.Text += funcs.GetProductList(s, user)
-				msg.ReplyMarkup = api.ChangeStatus
+				msg.ReplyMarkup = api.Cancel
 			case "Buy list":
 				msg.Text = funcs.GetBuyList(s, user)
 			case "Product list":
@@ -83,9 +83,11 @@ func Start() {
 				(if you if you don't need some date, specify -1)`
 			case "From list":
 				blToPL = true
+				msg.ReplyMarkup = api.Cancel
 				msg.Text = funcs.GetBuyList(s, user)
 			case "Another":
 				anToPL = true
+				msg.ReplyMarkup = api.Cancel
 			case "Cancel":
 				toBuyList = false
 				blToPL = false

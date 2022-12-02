@@ -13,6 +13,21 @@ import (
 var schedulerBL *gocron.Scheduler
 var schedulerPL *gocron.Scheduler
 
+//go:generate moq -out funcs_moq_test.go . Funcs
+type Funcs interface {
+	GetUsers() ([]conn.User, error)
+	AddUser(name string, id int64) error
+	GetProductList(owner string, date string) ([]conn.ProductList, error)
+	GetBuyList(owner string, date string) ([]conn.BuyList, error)
+	GetLastList(owner string, time1 string, time2 string) ([]conn.LastProducts, error)
+	AddProductToBuyList(name string, weight string, reminder string, owner string) error
+	DeleteProductFromBuyList(name string, owner string) error
+	AddProductToProductList(name string, data string, owner string) error
+	ChangeProductFromProductList(name string, data string, owner string) error
+	DeleteProductFromProductList(name string, owner string) error
+	AddProductToLastList(name string, status bool, owner string) error
+}
+
 func Start(s *conn.Store, user string, id int64) string {
 	ischeated := false
 	users, err := s.GetUsers()
