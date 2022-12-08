@@ -2,8 +2,8 @@ version: '2.4'
 services:
   postgres:
     image: postgres:15.1
-    profiles:
-      - "db"
+    # profiles:
+    #   - "db"
     container_name: bot-postgres
     volumes:
       -bot:/val/lib/postgresql/data
@@ -35,8 +35,8 @@ services:
       context: .
 
     image: bot:latest
-    profiles:
-      - "app"
+    # profiles:
+    #   - "app"
     container_name: bot
     hostname: bot
 
