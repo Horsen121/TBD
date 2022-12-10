@@ -1,0 +1,56 @@
+version: '2.4'
+services:
+  postgres:
+    image: postgres:15.1
+    # profiles:
+    #   - "db"
+    container_name: bot-postgres
+    volumes:
+      -bot:/val/lib/postgresql/data
+
+    ports:
+    - 4321:4321
+
+    logging:
+      driver: json-file
+      options:
+        max-size: '100m'
+        max-file: '5'
+
+    environment:
+      - POSTGRES_DB=${DBNAME}
+      - POSTGRES_USER=${DBUSER}
+      - POSTFRES_PASSWORD=${DBPASSWORD}
+      - POSTGRES_HOST=${DBHOST}
+      - POSTFRES_PORT=${DBPORT}
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  bot:
+    build: 
+      context: .
+
+    image: bot:latest
+    # profiles:
+    #   - "app"
+    container_name: bot
+    hostname: bot
+
+    environment:
+      - TOKEN=${TOKEN}
+
+    ports:
+      - 8080:8080
+
+    logging:
+      driver: json-file
+      options:
+        max-size: '100m'
+        max-file: '5'
+
+  volumes:
+    bot:
