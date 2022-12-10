@@ -17,6 +17,7 @@ import (
 func Start() {
 	if err := godotenv.Load(); err != nil {
 		log.Print("No .env file found")
+		panic(err)
 	}
 
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("TOKEN"))
@@ -149,7 +150,7 @@ func Start() {
 						msg.Text = err
 					}
 
-					msg.Text = "Product's status added successfully"
+					msg.Text = "Product opened successfully"
 					openProduct = false
 				} else if changeStatus {
 					// func ChangeStatus
@@ -161,6 +162,7 @@ func Start() {
 					msg.Text = "Product's status added successfully"
 					changeStatus = false
 				} else if stats {
+					// func Stats
 					data := strings.Split(msg.Text, " ")
 					msg.Text = funcs.GetStats(s, data[0], data[1], user)
 					stats = false

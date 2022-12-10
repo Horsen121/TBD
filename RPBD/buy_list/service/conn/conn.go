@@ -14,9 +14,6 @@ import (
 type Store struct {
 	conn *sqlx.DB
 }
-type Product struct {
-	Name string
-}
 type User struct {
 	Id   int64
 	Name string
@@ -25,15 +22,29 @@ type ProductList struct {
 	Name string
 	Time time.Time
 }
+
+func (p ProductList) Date() string {
+	return fmt.Sprintf("%d-%s-%d", p.Time.Day(), p.Time.Month().String(), p.Time.Year())
+}
+
 type BuyList struct {
 	Name     string
 	Weight   float64
 	Reminder time.Time
 }
+
+func (b BuyList) Date() string {
+	return fmt.Sprintf("%d-%s-%d", b.Reminder.Day(), b.Reminder.Month().String(), b.Reminder.Year())
+}
+
 type LastProducts struct {
 	Name   string
 	Status bool
 	Date   time.Time
+}
+
+func (l LastProducts) GetDate() string {
+	return fmt.Sprintf("%d-%s-%d", l.Date.Day(), l.Date.Month().String(), l.Date.Year())
 }
 
 // NewStore creates new database connection
@@ -70,15 +81,15 @@ func (s *Store) AddUser(name string, id int64) error {
 }
 
 // GetProductList selects list of product from table for current user
-func (s *Store) GetProductList(owner string, date string) ([]ProductList, error) {
+func (s *Store) GetProductList(owner string, date *time.Time) ([]ProductList, error) {
 	var err error
 	list := []ProductList{}
-	if date == "-1" {
-		err = s.conn.SelectContext(context.Background(), &list, `SELECT pl.name, pl.time FROM productlist AS pl
+	if date == nil {
+		err = s.conn.SelectContext(context.Background(), &list, `SELECT pl.name, pl.time FROM product_list AS pl
 														WHERE owner = $1
 														ORDER BY pl.name DESC;`, owner)
 	} else {
-		err = s.conn.SelectContext(context.Background(), &list, `SELECT pl.name, pl.time  FROM productlist AS pl
+		err = s.conn.SelectContext(context.Background(), &list, `SELECT pl.name, pl.time  FROM product_list AS pl
 														WHERE owner = $1 AND time <= $2
 														ORDER BY pl.name DESC;`, owner, date)
 	}
@@ -90,15 +101,15 @@ func (s *Store) GetProductList(owner string, date string) ([]ProductList, error)
 }
 
 // GetBuyList selects buy list from table for current user
-func (s *Store) GetBuyList(owner string, date string) ([]BuyList, error) {
+func (s *Store) GetBuyList(owner string, date *time.Time) ([]BuyList, error) {
 	var err error
 	var list []BuyList
 
-	if date == "-1" {
-		err = s.conn.SelectContext(context.Background(), &list, `SELECT bl.name, bl.weight, bl.reminder FROM buylist AS bl
+	if date == nil {
+		err = s.conn.SelectContext(context.Background(), &list, `SELECT bl.name, bl.weight, bl.reminder FROM buy_list AS bl
 														WHERE owner = $1;`, owner)
 	} else {
-		err = s.conn.SelectContext(context.Background(), &list, `SELECT bl.name, bl.weight, bl.reminder FROM buylist AS bl
+		err = s.conn.SelectContext(context.Background(), &list, `SELECT bl.name, bl.weight, bl.reminder FROM buy_list AS bl
 														WHERE owner = $1 AND reminder < $2 OR reminder = $2;`, owner, date)
 	}
 	if err != nil {
@@ -109,21 +120,21 @@ func (s *Store) GetBuyList(owner string, date string) ([]BuyList, error) {
 }
 
 // GetLastList selects LastList from table for current user
-func (s *Store) GetLastList(owner string, time1 string, time2 string) ([]LastProducts, error) { // , time1 string, time2 string
+func (s *Store) GetLastList(owner string, from string, to string) ([]LastProducts, error) { // , time1 string, time2 string
 	var list []LastProducts
 	var err error
 
-	if (time1 != "-1") && (time2 != "-1") {
-		err = s.conn.SelectContext(context.Background(), &list, `SELECT ll.name, ll.status, ll.date FROM lastproduct AS ll
-														WHERE owner = $1 AND ll.date >= $2 AND ll.date <= $3;`, owner, time1, time2)
-	} else if (time1 == "-1") && (time2 != "-1") {
-		err = s.conn.SelectContext(context.Background(), &list, `SELECT ll.name, ll.status, ll.date FROM lastproduct AS ll
-														WHERE owner = $1 AND ll.date <= $2;`, owner, time2)
-	} else if (time2 == "-1") && (time1 != "-1") {
-		err = s.conn.SelectContext(context.Background(), &list, `SELECT ll.name, ll.status, ll.date FROM lastproduct AS ll
-														WHERE owner = $1 AND ll.date >= $2;`, owner, time1)
+	if (from != "-1") && (to != "-1") {
+		err = s.conn.SelectContext(context.Background(), &list, `SELECT ll.name, ll.status, ll.date FROM last_product AS ll
+														WHERE owner = $1 AND ll.date >= $2 AND ll.date <= $3;`, owner, from, to)
+	} else if (from == "-1") && (to != "-1") {
+		err = s.conn.SelectContext(context.Background(), &list, `SELECT ll.name, ll.status, ll.date FROM last_product AS ll
+														WHERE owner = $1 AND ll.date <= $2;`, owner, to)
+	} else if (to == "-1") && (from != "-1") {
+		err = s.conn.SelectContext(context.Background(), &list, `SELECT ll.name, ll.status, ll.date FROM last_product AS ll
+														WHERE owner = $1 AND ll.date >= $2;`, owner, from)
 	} else {
-		err = s.conn.SelectContext(context.Background(), &list, `SELECT ll.name, ll.status, ll.date FROM lastproduct AS ll
+		err = s.conn.SelectContext(context.Background(), &list, `SELECT ll.name, ll.status, ll.date FROM last_product AS ll
 														WHERE owner = $1;`, owner)
 	}
 	if err != nil {
@@ -137,11 +148,11 @@ func (s *Store) GetLastList(owner string, time1 string, time2 string) ([]LastPro
 func (s *Store) AddProductToBuyList(name string, weight string, reminder string, owner string) error {
 	var err error
 	if reminder != "-1" {
-		_, err = s.conn.ExecContext(context.Background(), `INSERT INTO buylist(name, weight, reminder, owner) 
+		_, err = s.conn.ExecContext(context.Background(), `INSERT INTO buy_list(name, weight, reminder, owner) 
 														VALUES($1, $2, $3, $4);`, name, weight, reminder, owner)
 	} else {
 		data := strings.Split(time.Now().String(), " ")[0]
-		_, err = s.conn.ExecContext(context.Background(), `INSERT INTO buylist(name, weight, reminder, owner) 
+		_, err = s.conn.ExecContext(context.Background(), `INSERT INTO buy_list(name, weight, reminder, owner) 
 														VALUES($1, $2, $3, $4);`, name, weight, data, owner)
 	}
 	if err != nil {
@@ -154,7 +165,7 @@ func (s *Store) AddProductToBuyList(name string, weight string, reminder string,
 // DeleteProductFromBuyList deletes product from BuyList
 func (s *Store) DeleteProductFromBuyList(name string, owner string) error {
 	var err error
-	_, err = s.conn.ExecContext(context.Background(), `DELETE FROM buylist
+	_, err = s.conn.ExecContext(context.Background(), `DELETE FROM buy_list
 													WHERE name = $1 AND owner = $2;`, name, owner)
 	if err != nil {
 		return fmt.Errorf("found err: %w", err)
@@ -166,7 +177,7 @@ func (s *Store) DeleteProductFromBuyList(name string, owner string) error {
 // AddProductToProductList adds product to productList
 func (s *Store) AddProductToProductList(name string, data string, owner string) error {
 	var err error
-	_, err = s.conn.ExecContext(context.Background(), `INSERT INTO productlist(name, time, owner)
+	_, err = s.conn.ExecContext(context.Background(), `INSERT INTO product_list(name, time, owner)
 													VALUES($1, $2, $3);`, name, data, owner)
 	if err != nil {
 		return fmt.Errorf("found err: %w", err)
@@ -178,7 +189,7 @@ func (s *Store) AddProductToProductList(name string, data string, owner string) 
 // ChangeProductFromProductList changes product to productList
 func (s *Store) ChangeProductFromProductList(name string, data string, owner string) error {
 	var err error
-	_, err = s.conn.ExecContext(context.Background(), `UPDATE productlist
+	_, err = s.conn.ExecContext(context.Background(), `UPDATE product_list
 													SET time = $1
 													WHERE name = $2 AND owner = $3;`, data, name, owner)
 	if err != nil {
@@ -191,7 +202,7 @@ func (s *Store) ChangeProductFromProductList(name string, data string, owner str
 // DeleteProductFromProductList deletes product from productList
 func (s *Store) DeleteProductFromProductList(name string, owner string) error {
 	var err error
-	_, err = s.conn.ExecContext(context.Background(), `DELETE FROM productlist
+	_, err = s.conn.ExecContext(context.Background(), `DELETE FROM product_list
 													WHERE name = $1 AND owner = $2;`, name, owner)
 	if err != nil {
 		return fmt.Errorf("found err: %w", err)
@@ -203,7 +214,7 @@ func (s *Store) DeleteProductFromProductList(name string, owner string) error {
 // AddProductToLastList adds product to lastList
 func (s *Store) AddProductToLastList(name string, status bool, owner string) error {
 	var err error
-	_, err = s.conn.ExecContext(context.Background(), `INSERT INTO lastproduct(name, owner, status, date)
+	_, err = s.conn.ExecContext(context.Background(), `INSERT INTO last_product(name, owner, status, date)
 													VALUES($1, $2, $3, $4);`, name, owner, status, time.Now())
 	if err != nil {
 		return fmt.Errorf("found err: %w", err)

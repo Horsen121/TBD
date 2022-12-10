@@ -1,13 +1,13 @@
 BEGIN;
 
-CREATE TABLE productList(
+CREATE TABLE product_list(
     id SERIAL PRIMARY KEY,
     name VARCHAR(255),
     time DATE,
     owner VARCHAR(255)
 );
 
-CREATE TABLE buyList(
+CREATE TABLE buy_list(
     id SERIAL PRIMARY KEY,
     name VARCHAR(255),
     weight float,
@@ -15,7 +15,7 @@ CREATE TABLE buyList(
     owner VARCHAR(255)
 );
 
-CREATE TABLE lastProduct(
+CREATE TABLE last_product(
     id SERIAL PRIMARY KEY,
     name VARCHAR(255),
     owner VARCHAR(255),

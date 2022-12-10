@@ -3,6 +3,7 @@ package funcs
 import (
 	"fmt"
 	"github/Horsen121/TBD/RPBD/buy_list/service/conn"
+	"log"
 	"strings"
 	"time"
 
@@ -32,6 +33,7 @@ func Start(s *conn.Store, user string, id int64) string {
 	ischeated := false
 	users, err := s.GetUsers()
 	if err != nil {
+		log.Print(err)
 		return "funcs: I'm sorry, but an error has occurred :("
 	}
 
@@ -43,6 +45,7 @@ func Start(s *conn.Store, user string, id int64) string {
 	if !ischeated {
 		err := s.AddUser(user, id)
 		if err != nil {
+			log.Print(err)
 			return "funcs: I'm sorry, but an error has occurred :("
 		}
 	}
@@ -54,10 +57,12 @@ func Start(s *conn.Store, user string, id int64) string {
 func AddToBuyList(s *conn.Store, name string, weight string, reminder string, user string) string {
 	_, err := time.Parse("2006-01-02", reminder)
 	if err != nil {
+		log.Print(err)
 		return "funcs: I'm sorry, but an error has occurred :("
 	}
 
 	if err := s.AddProductToBuyList(name, weight, reminder, user); err != nil {
+		log.Print(err)
 		return "funcs: I'm sorry, but an error has occurred :("
 	}
 
@@ -67,14 +72,17 @@ func AddToBuyList(s *conn.Store, name string, weight string, reminder string, us
 func AddToProductList(s *conn.Store, name string, data string, user string, place string) string {
 	_, err := time.Parse("2006-01-02", data)
 	if err != nil {
+		log.Print(err)
 		return "funcs: I'm sorry, but an error has occurred :("
 	}
 
 	if err := s.AddProductToProductList(name, data, user); err != nil {
+		log.Print(err)
 		return "funcs: I'm sorry, but an error has occurred :("
 	}
 	if place == "bl" {
 		if err := s.DeleteProductFromBuyList(name, user); err != nil {
+			log.Print(err)
 			return "funcs: I'm sorry, but an error has occurred :("
 		}
 	}
@@ -89,9 +97,11 @@ func ChangeStatus(s *conn.Store, name string, status string, user string) string
 	}
 
 	if err := s.AddProductToLastList(name, stat, user); err != nil {
+		log.Print(err)
 		return "funcs: I'm sorry, but an error has occurred :("
 	}
 	if err := s.DeleteProductFromProductList(name, user); err != nil {
+		log.Print(err)
 		return "funcs: I'm sorry, but an error has occurred :("
 	}
 
@@ -100,6 +110,7 @@ func ChangeStatus(s *conn.Store, name string, status string, user string) string
 
 func OpenProduct(s *conn.Store, name string, data string, user string) string {
 	if err := s.ChangeProductFromProductList(name, data, user); err != nil {
+		log.Print(err)
 		return "funcs: I'm sorry, but an error has occurred :("
 	}
 
@@ -108,8 +119,9 @@ func OpenProduct(s *conn.Store, name string, data string, user string) string {
 
 func GetBuyList(s *conn.Store, user string) string {
 	var res string
-	products, err := s.GetBuyList(user, "-1")
+	products, err := s.GetBuyList(user, nil)
 	if err != nil {
+		log.Print(err)
 		res = "funcs: I'm sorry, but an error has occurred :("
 	}
 	if len(products) == 0 {
@@ -117,8 +129,7 @@ func GetBuyList(s *conn.Store, user string) string {
 	}
 
 	for _, val := range products {
-		time := strings.Split(val.Reminder.String(), " ")
-		res += fmt.Sprintf("%s %v %s\n", val.Name, val.Weight, time[0])
+		res += fmt.Sprintf("%s %v %s\n", val.Name, val.Weight, val.Date())
 	}
 
 	return res
@@ -126,8 +137,9 @@ func GetBuyList(s *conn.Store, user string) string {
 
 func GetProductList(s *conn.Store, user string) string {
 	var res string
-	products, err := s.GetProductList(user, "-1")
+	products, err := s.GetProductList(user, nil)
 	if err != nil {
+		log.Print(err)
 		res = "funcs: I'm sorry, but an error has occurred :("
 	}
 	if len(products) == 0 {
@@ -135,8 +147,7 @@ func GetProductList(s *conn.Store, user string) string {
 	}
 
 	for _, val := range products {
-		time := strings.Split(val.Time.String(), " ")
-		res += val.Name + " " + time[0] + "\n"
+		res += val.Name + " " + val.Date() + "\n"
 	}
 
 	return res
@@ -146,6 +157,7 @@ func GetLastProducts(s *conn.Store, user string) string {
 	var res string
 	products, err := s.GetLastList(user, "-1", "-1")
 	if err != nil {
+		log.Print(err)
 		res = "funcs: I'm sorry, but an error has occurred :("
 	}
 	if len(products) == 0 {
@@ -167,6 +179,7 @@ func GetStats(s *conn.Store, date1 string, date2 string, user string) string {
 	var done, cast int
 	products, err := s.GetLastList(user, date1, date2)
 	if err != nil {
+		log.Print(err)
 		return "funcs: I'm sorry, but an error has occurred :("
 	}
 	if len(products) == 0 {
@@ -224,8 +237,10 @@ func CheckBuyList(bot *tgbotapi.BotAPI, s *conn.Store, user string, id int64) {
 		return
 	}
 
-	products, err := s.GetBuyList(user, data[0])
+	time := time.Now()
+	products, err := s.GetBuyList(user, &time)
 	if err != nil {
+		log.Print(err)
 		res = "I'm sorry, but an error has occurred :("
 	}
 	if len(products) == 0 {
@@ -250,8 +265,10 @@ func CheckProductList(bot *tgbotapi.BotAPI, s *conn.Store, user string, id int64
 		return
 	}
 
-	products, err := s.GetProductList(user, data[0])
+	time := time.Now()
+	products, err := s.GetProductList(user, &time) // data[0]
 	if err != nil {
+		log.Print(err)
 		res = "I'm sorry, but an error has occurred :("
 	}
 
