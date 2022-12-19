@@ -17,6 +17,8 @@ type User struct {
 	Id       int
 	Name     string
 	Surname  string
+	Login    string
+	Password string
 	Status   bool
 	Priority bool
 }
@@ -62,16 +64,16 @@ func (s *Store) AddNewUser(name string, surname string, login string, password s
 }
 
 // GetPasswordByLogin selects password of user from table by login
-func (s *Store) GetPasswordByLogin(login string) ([]User, error) {
-	list := []User{}
-	err := s.conn.SelectContext(context.Background(), &list, `SELECT password, status FROM users 
+func (s *Store) GetPasswordByLogin(login string) (User, error) {
+	user := User{}
+	err := s.conn.SelectContext(context.Background(), &user, `SELECT password, status FROM users 
 																WHERE login=$1;`, login)
 
 	if err != nil {
-		return nil, fmt.Errorf("query err: %w", err)
+		return User{}, fmt.Errorf("query err: %w", err)
 	}
 
-	return list, nil
+	return user, nil
 }
 
 // ChangePriority changes priority of user
@@ -146,7 +148,7 @@ func (s *Store) ChangeUserStatus(user_id int, status bool) error {
 }
 
 // AddIll do transaction about ill
-func (s *Store) AddIll(user_id int, started_at time.Time, finished_at time.Time, coef int) error {
+func (s *Store) AddIll(user_id int, started_at time.Time, finished_at time.Time, coef float32) error {
 	var err error
 	list := []Smena{}
 	err = s.conn.SelectContext(context.Background(), &list, `SELECT smena_id, started_at, finished_at FROM timetable 
