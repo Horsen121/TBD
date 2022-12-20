@@ -14,6 +14,7 @@ import (
 	// "github.com/golang-migrate/migrate/database/postgres"
 	// "github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"golang.org/x/crypto/bcrypt"
 	// "github.com/testcontainers/testcontainers-go"
 	// "github.com/testcontainers/testcontainers-go/wait"
 )
@@ -79,13 +80,16 @@ func TestAddNewUser(t *testing.T) {
 	// store := Store{
 	// 	conn: db,
 	// }
+	hash, err := bcrypt.GenerateFromPassword([]byte("pass"), 14)
+	if err != nil {
 
-	if err = store.AddNewUser("test", "User", "login", "pass", true, true); err != nil {
+	}
+	if err = store.AddNewUser("test", "User", "login", string(hash), true, true, true); err != nil {
 		t.Error(err)
 	}
 }
 
-func TestGetPasswordByLogin1(t *testing.T) {
+func TestGetUserByLogin1(t *testing.T) {
 	// container, db := CreateDB()
 	// defer container.Terminate(context.Background())
 
@@ -105,7 +109,7 @@ func TestGetPasswordByLogin1(t *testing.T) {
 	}
 }
 
-func TestGetPasswordByLogin2(t *testing.T) {
+func TestGetUserByLogin2(t *testing.T) {
 	// container, db := CreateDB()
 	// defer container.Terminate(context.Background())
 
@@ -119,12 +123,12 @@ func TestGetPasswordByLogin2(t *testing.T) {
 	// 	conn: db,
 	// }
 
-	u, err := store.GetUserByLogin("login111")
+	_, err = store.GetUserByLogin("login111")
 	if err != nil {
+		if err.Error() == "User not found" {
+			return
+		}
 		t.Error(err)
-	}
-	if u.Login == "" {
-		t.Error("Nil User")
 	}
 }
 
@@ -181,6 +185,9 @@ func TestGetSmenaById(t *testing.T) {
 	// }
 
 	if _, err = store.GetSmenaById(1); err != nil {
+		if err.Error() == "Smena not found" {
+			return
+		}
 		t.Error(err)
 	}
 }
@@ -199,7 +206,7 @@ func TestAddChange(t *testing.T) {
 	// 	conn: db,
 	// }
 
-	if err = store.AddChange(1, 1, 1, time.Date(2022, 12, 22, 12, 45, 00, 0, time.Local), time.Date(2022, 12, 23, 12, 45, 00, 0, time.Local)); err != nil {
+	if err = store.AddChange(2, 1, 1, time.Date(2022, 12, 22, 12, 45, 00, 0, time.Local), time.Date(2022, 12, 23, 12, 45, 00, 0, time.Local)); err != nil {
 		t.Error(err)
 	}
 }
@@ -295,7 +302,7 @@ func TestChangeSmena1(t *testing.T) {
 	// 	conn: db,
 	// }
 
-	if err = store.ChangeSmena(1, 1, time.Date(2022, 12, 22, 12, 45, 00, 0, time.Local),
+	if err = store.ChangeSmena(2, 1, time.Date(2022, 12, 22, 12, 45, 00, 0, time.Local),
 		time.Date(2022, 12, 27, 12, 45, 00, 0, time.Local), time.Time{}, time.Time{}, true); err != nil {
 		t.Error(err)
 	}
@@ -315,7 +322,7 @@ func TestChangeSmena2(t *testing.T) {
 	// 	conn: db,
 	// }
 
-	if err = store.ChangeSmena(1, 1, time.Date(2022, 12, 22, 12, 45, 00, 0, time.Local),
+	if err = store.ChangeSmena(2, 1, time.Date(2022, 12, 22, 12, 45, 00, 0, time.Local),
 		time.Date(2022, 12, 27, 12, 45, 00, 0, time.Local), time.Date(2022, 12, 26, 12, 45, 00, 0, time.Local),
 		time.Date(2022, 12, 28, 12, 45, 00, 0, time.Local), false); err != nil {
 		t.Error(err)

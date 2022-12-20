@@ -12,16 +12,17 @@ import (
 
 type Store struct {
 	conn *sqlx.DB
+	ctx  context.Context
 }
 type User struct {
-	Id       int
-	Name     string
-	Surname  string
-	Login    string
-	Password string
-	Status   bool
-	Priority bool
-	Type     bool
+	Id        int
+	Name      string
+	Surname   string
+	Login     string
+	Password  string
+	Status    bool
+	Prioritet bool
+	User_type bool
 }
 type Smena struct {
 	Id          int
@@ -50,13 +51,14 @@ func NewStore(connString string) (*Store, error) {
 
 	return &Store{
 		conn: conn,
+		ctx:  context.Background(),
 	}, nil
 }
 
 // AddNewUser adds new user into users
-func (s *Store) AddNewUser(name string, surname string, login string, password string, status bool, prioritet bool) error {
-	_, err := s.conn.ExecContext(context.Background(), `INSERT INTO users(name, surname, login, password, status, prioritet) 
-														VALUES($1, $2, $3, $4, true, $5);`, name, surname, login, password, prioritet)
+func (s *Store) AddNewUser(name, surname, login, password string, status, prioritet, user_type bool) error {
+	_, err := s.conn.ExecContext(s.ctx, `INSERT INTO users(name, surname, login, password, status, prioritet, user_type) 
+														VALUES($1, $2, $3, $4, true, $5, $6);`, name, surname, login, password, prioritet, user_type)
 	if err != nil {
 		return fmt.Errorf("found err: %w", err)
 	}
@@ -66,23 +68,24 @@ func (s *Store) AddNewUser(name string, surname string, login string, password s
 
 // GetPasswordByLogin selects password of user from table by login
 func (s *Store) GetUserByLogin(login string) (User, error) {
-	user := User{}
-	err := s.conn.SelectContext(context.Background(), &user, `SELECT * FROM users 
-																WHERE login=$1;`, login)
-
+	user := []User{}
+	err := s.conn.SelectContext(s.ctx, &user, `SELECT * FROM users 
+												WHERE login=$1;`, login)
 	if err != nil {
-		user.Id = -1
-		return user, fmt.Errorf("query err: %w", err)
+		return User{}, fmt.Errorf("query err: %w", err)
+	}
+	if len(user) == 0 {
+		return User{}, fmt.Errorf("User not found")
 	}
 
-	return user, nil
+	return user[0], nil
 }
 
 // ChangePriority changes priority of user
 func (s *Store) ChangePriority(user_id int, prioritet bool) error {
-	_, err := s.conn.ExecContext(context.Background(), `UPDATE users 
-														SET prioritet=$1 
-														WHERE id=$2;`, prioritet, user_id)
+	_, err := s.conn.ExecContext(s.ctx, `UPDATE users 
+											SET prioritet=$1 
+											WHERE id=$2;`, prioritet, user_id)
 	if err != nil {
 		return fmt.Errorf("found err: %w", err)
 	}
@@ -91,9 +94,9 @@ func (s *Store) ChangePriority(user_id int, prioritet bool) error {
 }
 
 // AddSmena adds new smena into timetable
-func (s *Store) AddSmena(user_id int, started_at time.Time, finished_at time.Time) error {
-	_, err := s.conn.ExecContext(context.Background(), `INSERT INTO timetable (user_id, started_at, finished_at) 
-														VALUES ($1, $2, $3);`, user_id, started_at, finished_at)
+func (s *Store) AddSmena(user_id int, started_at, finished_at time.Time) error {
+	_, err := s.conn.ExecContext(s.ctx, `INSERT INTO timetable (user_id, started_at, finished_at) 
+											VALUES ($1, $2, $3);`, user_id, started_at, finished_at)
 
 	if err != nil {
 		return fmt.Errorf("found err: %w", err)
@@ -104,25 +107,29 @@ func (s *Store) AddSmena(user_id int, started_at time.Time, finished_at time.Tim
 
 // GetSmenaById get's smena by id
 func (s *Store) GetSmenaById(smena_id int) (Smena, error) {
-	smena := Smena{}
-	err := s.conn.SelectContext(context.Background(), &smena, `SELECT * FROM timetable 
-																WHERE id=$1;`, smena_id)
+	smena := []Smena{}
+	err := s.conn.SelectContext(s.ctx, &smena, `SELECT * FROM timetable 
+													WHERE id=$1;`, smena_id)
 
 	if err != nil {
-		smena.Id = -1
-		return smena, fmt.Errorf("query err: %w", err)
+		return Smena{}, fmt.Errorf("query err: %w", err)
+	}
+	if len(smena) == 0 {
+		return Smena{}, fmt.Errorf("Smena not found")
 	}
 
-	return smena, nil
+	return smena[0], nil
 }
 
 // AddChange adds new offer into change
-func (s *Store) AddChange(smena_id int, hoster_id int,
-	coef float32, wonted_start time.Time, wonted_finish time.Time) error {
+func (s *Store) AddChange(smena_id, hoster_id int, coef float32, wonted_start, wonted_finish time.Time) error {
 
 	smena, err := s.GetSmenaById(smena_id)
-	_, err = s.conn.ExecContext(context.Background(),
-		`INSERT INTO change (smena_id, started_at, finished_at, hoster_id, coef, wonted_start, wonted_finish, status) 
+	if err != nil {
+		return fmt.Errorf("found err: %w", err)
+	}
+	_, err = s.conn.ExecContext(s.ctx,
+		`INSERT INTO change (smena_id, started_at, finished_at, hoster_id, coef, wanted_start, wanted_finish, status) 
 		VALUES ($1, $2, $3, $4, $5, $6, $7, false);`, smena_id, smena.Started_at, smena.Finished_at, hoster_id, coef, wonted_start, wonted_finish)
 
 	if err != nil {
@@ -137,10 +144,10 @@ func (s *Store) GetSmenaList(user_id int) ([]Smena, error) {
 	var err error
 	list := []Smena{}
 	if user_id != 0 {
-		err = s.conn.SelectContext(context.Background(), &list, `SELECT started_at, finished_at FROM timetable 
+		err = s.conn.SelectContext(s.ctx, &list, `SELECT started_at, finished_at FROM timetable 
 																	WHERE user_id=$1;`, user_id)
 	} else {
-		err = s.conn.SelectContext(context.Background(), &list, `SELECT user_id, started_at, finished_at FROM timetable
+		err = s.conn.SelectContext(s.ctx, &list, `SELECT user_id, started_at, finished_at FROM timetable
 																	ORDER BY started_at DESC
 																	LIMIT 20;`)
 	}
@@ -154,9 +161,9 @@ func (s *Store) GetSmenaList(user_id int) ([]Smena, error) {
 
 // ChangeUserStatus changes status of user
 func (s *Store) ChangeUserStatus(user_id int, status bool) error {
-	_, err := s.conn.ExecContext(context.Background(), `UPDATE users 
-														SET status=$1 
-														WHERE id=$2;`, status, user_id)
+	_, err := s.conn.ExecContext(s.ctx, `UPDATE users 
+											SET status=$1 
+											WHERE id=$2;`, status, user_id)
 	if err != nil {
 		return fmt.Errorf("found err: %w", err)
 	}
@@ -165,23 +172,23 @@ func (s *Store) ChangeUserStatus(user_id int, status bool) error {
 }
 
 // AddIll do transaction about ill
-func (s *Store) AddIll(user_id int, started_at time.Time, finished_at time.Time, coef float32) error {
+func (s *Store) AddIll(user_id int, started_at, finished_at time.Time, coef float32) error {
 	var err error
 	list := []Smena{}
-	err = s.conn.SelectContext(context.Background(), &list, `SELECT smena_id, started_at, finished_at FROM timetable 
-																WHERE user_id=$1 AND started_at>=$2 AND finished_at<=$3;`, user_id, started_at, finished_at)
+	err = s.conn.SelectContext(s.ctx, &list, `SELECT id, started_at, finished_at FROM timetable 
+												WHERE user_id=$1 AND started_at>=$2 AND finished_at<=$3;`, user_id, started_at, finished_at)
 	if err != nil {
 		return fmt.Errorf("found err: %w", err)
 	}
 
-	_, err = s.conn.ExecContext(context.Background(), `INSERT INTO illnes (user_id, started_at, finished_at) 
-														VALUES ($1, $2, $3);`, user_id, started_at, finished_at)
+	_, err = s.conn.ExecContext(s.ctx, `INSERT INTO ill (user_id, d_start, d_finish) 
+											VALUES ($1, $2, $3);`, user_id, started_at, finished_at)
 	if err != nil {
 		return fmt.Errorf("found err: %w", err)
 	}
 
 	for _, smena := range list {
-		_, err = s.conn.ExecContext(context.Background(),
+		_, err = s.conn.ExecContext(s.ctx,
 			`BEGIN;
 				INSERT INTO change (smena_id, started_at, finished_at, hoster_id, coef, status)
 				VALUES ($4, $2, $3, 0, $5, false);
@@ -198,30 +205,25 @@ func (s *Store) AddIll(user_id int, started_at time.Time, finished_at time.Time,
 }
 
 // ChangeSmena do transaction about changing Smena
-func (s *Store) ChangeSmena(smena_id, user_id int, started_at time.Time, finished_at time.Time,
-	wonted_start time.Time, wonted_finish time.Time, ill bool) error {
+func (s *Store) ChangeSmena(smena_id, user_id int, started_at, finished_at, wonted_start, wonted_finish time.Time, ill bool) error {
 	var err error
 
 	if ill {
-		_, err = s.conn.ExecContext(context.Background(),
-			`BEGIN;
-			UPDATE change SET status=true 
-			WHERE smena_id=$1;
-
-			INSERT INTO timetable (user_id, started_at, finished_at) 
-			VALUES ($2, $3, $4);
-		END;`, smena_id, user_id, started_at, finished_at)
+		tx := s.conn.MustBegin()
+		tx.MustExec(`UPDATE change SET status=true 
+						WHERE smena_id=$1;`, smena_id)
+		tx.MustExec(`INSERT INTO timetable (user_id, started_at, finished_at) 
+						VALUES ($1, $2, $3);`, user_id, started_at, finished_at)
+		err = tx.Commit()
 	} else {
-		_, err = s.conn.ExecContext(context.Background(),
-			`BEGIN;
-			UPDATE change SET status=true WHERE smena_id=$1;
-
-			UPDATE timetable SET started_at=$5 AND finished_at=$6
-			WHERE smena_id=$1;
-
-			UPDATE timetable SET started_at=$3 AND finished_at=$4 
-			WHERE user_id=$2;
-		END;`, smena_id, user_id, started_at, finished_at, wonted_start, wonted_finish)
+		tx := s.conn.MustBegin()
+		tx.MustExec(`UPDATE change SET status=true 
+						WHERE smena_id=$1;`, smena_id)
+		tx.MustExec(`UPDATE timetable SET started_at=$2, finished_at=$3
+						WHERE id=$1;`, smena_id, wonted_start, wonted_finish)
+		tx.MustExec(`UPDATE timetable SET started_at=$2, finished_at=$3 
+						WHERE user_id=$1;`, user_id, started_at, finished_at)
+		err = tx.Commit()
 	}
 
 	if err != nil {
