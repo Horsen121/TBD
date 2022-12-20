@@ -21,6 +21,7 @@ type User struct {
 	Password string
 	Status   bool
 	Priority bool
+	Type     bool
 }
 type Smena struct {
 	Id          int
@@ -64,13 +65,14 @@ func (s *Store) AddNewUser(name string, surname string, login string, password s
 }
 
 // GetPasswordByLogin selects password of user from table by login
-func (s *Store) GetPasswordByLogin(login string) (User, error) {
+func (s *Store) GetUserByLogin(login string) (User, error) {
 	user := User{}
-	err := s.conn.SelectContext(context.Background(), &user, `SELECT password, status FROM users 
+	err := s.conn.SelectContext(context.Background(), &user, `SELECT * FROM users 
 																WHERE login=$1;`, login)
 
 	if err != nil {
-		return User{}, fmt.Errorf("query err: %w", err)
+		user.Id = -1
+		return user, fmt.Errorf("query err: %w", err)
 	}
 
 	return user, nil
@@ -100,13 +102,28 @@ func (s *Store) AddSmena(user_id int, started_at time.Time, finished_at time.Tim
 	return nil
 }
 
+// GetSmenaById get's smena by id
+func (s *Store) GetSmenaById(smena_id int) (Smena, error) {
+	smena := Smena{}
+	err := s.conn.SelectContext(context.Background(), &smena, `SELECT * FROM timetable 
+																WHERE id=$1;`, smena_id)
+
+	if err != nil {
+		smena.Id = -1
+		return smena, fmt.Errorf("query err: %w", err)
+	}
+
+	return smena, nil
+}
+
 // AddChange adds new offer into change
-func (s *Store) AddChange(smena_id int, started_at time.Time, finished_at time.Time, hoster_id int,
+func (s *Store) AddChange(smena_id int, hoster_id int,
 	coef float32, wonted_start time.Time, wonted_finish time.Time) error {
 
-	_, err := s.conn.ExecContext(context.Background(),
+	smena, err := s.GetSmenaById(smena_id)
+	_, err = s.conn.ExecContext(context.Background(),
 		`INSERT INTO change (smena_id, started_at, finished_at, hoster_id, coef, wonted_start, wonted_finish, status) 
-		VALUES ($1, $2, $3, $4, $5, $6, $7, false);`, smena_id, started_at, finished_at, hoster_id, coef, wonted_start, wonted_finish)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, false);`, smena_id, smena.Started_at, smena.Finished_at, hoster_id, coef, wonted_start, wonted_finish)
 
 	if err != nil {
 		return fmt.Errorf("found err: %w", err)

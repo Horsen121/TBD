@@ -99,7 +99,7 @@ func TestGetPasswordByLogin1(t *testing.T) {
 	// 	conn: db,
 	// }
 
-	_, err = store.GetPasswordByLogin("login")
+	_, err = store.GetUserByLogin("login")
 	if err != nil {
 		t.Error(err)
 	}
@@ -119,7 +119,7 @@ func TestGetPasswordByLogin2(t *testing.T) {
 	// 	conn: db,
 	// }
 
-	u, err := store.GetPasswordByLogin("login111")
+	u, err := store.GetUserByLogin("login111")
 	if err != nil {
 		t.Error(err)
 	}
@@ -166,6 +166,25 @@ func TestAddSmena(t *testing.T) {
 	}
 }
 
+func TestGetSmenaById(t *testing.T) {
+	// container, db := CreateDB()
+	// defer container.Terminate(context.Background())
+
+	connString := fmt.Sprintf("postgres://mitiushin:PgDmnANIME10@95.217.232.188:7777/mitiushin")
+	store, err := NewStore(connString)
+	if err != nil {
+		panic(err)
+	}
+
+	// store := Store{
+	// 	conn: db,
+	// }
+
+	if _, err = store.GetSmenaById(1); err != nil {
+		t.Error(err)
+	}
+}
+
 func TestAddChange(t *testing.T) {
 	// container, db := CreateDB()
 	// defer container.Terminate(context.Background())
@@ -180,8 +199,7 @@ func TestAddChange(t *testing.T) {
 	// 	conn: db,
 	// }
 
-	if err = store.AddChange(1, time.Now(), time.Date(2022, 12, 22, 12, 45, 00, 0, time.Local),
-		1, 1, time.Date(2022, 12, 22, 12, 45, 00, 0, time.Local), time.Date(2022, 12, 23, 12, 45, 00, 0, time.Local)); err != nil {
+	if err = store.AddChange(1, 1, 1, time.Date(2022, 12, 22, 12, 45, 00, 0, time.Local), time.Date(2022, 12, 23, 12, 45, 00, 0, time.Local)); err != nil {
 		t.Error(err)
 	}
 }
