@@ -23,93 +23,108 @@ type Funcs interface {
 	ChangeSmena(smena_id, user_id int, started_at, finished_at, wonted_start, wonted_finish time.Time, ill bool) error
 }
 
-func NewUser(s *conn.Store, name, surname, login, password string, prioritet, user_type bool) string {
+var s *conn.Store
+
+func Start(store *conn.Store) {
+	s = store
+}
+
+func NewUser(admin, name, surname, login, password string, prioritet, user_type bool) string {
+	user, err := s.GetUserByLogin(admin)
+	if err != nil {
+		log.Print(err.Error())
+		return err.Error()
+	}
+	if !user.User_type {
+		log.Print("You cannot add a new user. Contact to Admin")
+		return "You cannot add a new user. Contact to Admin"
+	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	if err != nil {
 
 	}
 
 	if err := s.AddNewUser(name, surname, login, string(hash), true, prioritet, user_type); err != nil {
-		log.Fatalf("found err: %s", err.Error())
+		log.Printf("found err: %s", err.Error())
 		return fmt.Sprintf("found err: %s", err.Error())
 	}
 
-	log.Fatal("New user was added successfuly")
+	log.Print("New user was added successfuly")
 	return "New user was added successfuly"
 }
 
-func Autorisation(s *conn.Store, login, password string) string {
+func Autorisation(login, password string) string {
 	user, err := s.GetUserByLogin(login)
 	if err != nil {
 		if err.Error() == "User not found" {
 			return err.Error()
 		}
-		log.Fatalf("found err: %s", err.Error())
+		log.Printf("found err: %s", err.Error())
 		return fmt.Sprintf("found err: %s", err.Error())
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		log.Fatal("found err: password is uncorrect!")
+		log.Printf("found err: password is uncorrect!")
 		return "found err: password is uncorrect!"
 	}
 
 	if !user.Status {
-		log.Fatal("found err: user was buned!")
+		log.Printf("found err: user was buned!")
 		return "found err: user was buned!"
 	}
 
-	log.Fatal("User was autorised successfuly")
+	log.Print("User was autorised successfuly")
 	return "User was autorised successfuly"
 }
 
-func ChangeUsersPriority(s *conn.Store, user_id int, prioritet bool) string {
+func ChangeUsersPriority(user_id int, prioritet bool) string {
 	if err := s.ChangePriority(user_id, prioritet); err != nil {
-		log.Fatalf("found err: %s", err.Error())
+		log.Printf("found err: %s", err.Error())
 		return fmt.Sprintf("found err: %s", err.Error())
 	}
 
-	log.Fatal("User's priority changed successfuly")
+	log.Print("User's priority changed successfuly")
 	return "User's priority changed successfuly"
 }
 
-func AddNewSmena(s *conn.Store, user_id int, started_at, finished_at time.Time) string {
+func AddNewSmena(user_id int, started_at, finished_at time.Time) string {
 	if err := s.AddSmena(user_id, started_at, finished_at); err != nil {
-		log.Fatalf("found err: %s", err.Error())
+		log.Printf("found err: %s", err.Error())
 		return fmt.Sprintf("found err: %s", err.Error())
 	}
 
-	log.Fatal("New smena added successfuly")
+	log.Print("New smena added successfuly")
 	return "New smena added successfuly"
 }
 
-func AddChangeOffer(s *conn.Store, user_id, smena_id int, wonted_start, wonted_finish time.Time) string {
+func AddChangeOffer(user_id, smena_id int, wonted_start, wonted_finish time.Time) string {
 	smena, err := s.GetSmenaById(smena_id)
 	if err != nil {
-		log.Fatalf("found err: %s", err.Error())
+		log.Printf("found err: %s", err.Error())
 		return fmt.Sprintf("found err: %s", err.Error())
 	}
 	if smena.Id == -1 {
-		log.Fatalf("Smena not found")
+		log.Printf("Smena not found")
 		return fmt.Sprint("Smena not found")
 	}
 
 	if s.AddChange(smena_id, user_id, 1, wonted_start, wonted_finish); err != nil {
-		log.Fatalf("found err: %s", err.Error())
+		log.Printf("found err: %s", err.Error())
 		return fmt.Sprintf("found err: %s", err.Error())
 	}
 
-	log.Fatal("New change offer added successfuly")
+	log.Print("New change offer added successfuly")
 	return "New change offer added successfuly"
 }
 
-func GetListOfSmena(s *conn.Store, user_id int) string {
+func GetListOfSmena(user_id int) string {
 	list, err := s.GetSmenaList(user_id)
 	if err != nil {
-		log.Fatalf("found err: %s", err.Error())
+		log.Printf("found err: %s", err.Error())
 		return fmt.Sprintf("found err: %s", err.Error())
 	}
 	if len(list) == 0 {
-		log.Fatal("List is empty")
+		log.Print("List is empty")
 		return "List is empty"
 	}
 
@@ -118,42 +133,52 @@ func GetListOfSmena(s *conn.Store, user_id int) string {
 		res += fmt.Sprintf("%d %s\t%s\n", smena.Id, smena.StartData(), smena.FinishData())
 	}
 
-	log.Fatal("List of smena got successfuly")
+	log.Print("List of smena got successfuly")
 	return res
 }
 
-func ChangeStatus(s *conn.Store, user_id int, status bool) string {
+func ChangeStatus(admin string, user_id int, status bool) string {
+	log.Print("funcs")
+	user, err := s.GetUserByLogin(admin)
+	if err != nil {
+		log.Print(err.Error())
+		return err.Error()
+	}
+	if !user.User_type {
+		log.Print("You cannot add a new user. Contact to Admin")
+		return "You cannot add a new user. Contact to Admin"
+	}
 	if err := s.ChangeUserStatus(user_id, status); err != nil {
-		log.Fatalf("found err: %s", err.Error())
+		log.Printf("found err: %s", err.Error())
 		return fmt.Sprintf("found err: %s", err.Error())
 	}
 
-	log.Fatal("Status was changed successfuly")
+	log.Print("Status was changed successfuly")
 	return "Status was changed successfuly"
 }
 
-func Ill(s *conn.Store, user_id int, started_at, finished_at time.Time, coef float32) string {
+func Ill(user_id int, started_at, finished_at time.Time, coef float64) string {
 	if err := s.AddIll(user_id, started_at, finished_at, coef); err != nil {
-		log.Fatalf("found err: %s", err.Error())
+		log.Printf("found err: %s", err.Error())
 		return fmt.Sprintf("found err: %s", err.Error())
 	}
 
-	log.Fatal("Transaction of illness successfuly")
+	log.Print("Transaction of illness successfuly")
 	return "Transaction of illness successfuly"
 }
 
-func ChangingSmena(s *conn.Store, smena_id, user_id int, wanted_start, wanted_finish time.Time, ill bool) string {
+func ChangingSmena(smena_id, user_id int, wanted_start, wanted_finish time.Time, ill bool) string {
 	smena, err := s.GetSmenaById(smena_id)
 	if err != nil {
-		log.Fatalf("found err: %s", err.Error())
+		log.Printf("found err: %s", err.Error())
 		return fmt.Sprintf("found err: %s", err.Error())
 	}
 
 	if err := s.ChangeSmena(smena_id, user_id, smena.Started_at, smena.Finished_at, wanted_start, wanted_finish, ill); err != nil {
-		log.Fatalf("found err: %s", err.Error())
+		log.Printf("found err: %s", err.Error())
 		return fmt.Sprintf("found err: %s", err.Error())
 	}
 
-	log.Fatal("Transaction of illness successfuly")
+	log.Print("Transaction of illness successfuly")
 	return "Transaction of illness successfuly"
 }

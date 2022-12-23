@@ -15,20 +15,20 @@ type Store struct {
 	ctx  context.Context
 }
 type User struct {
-	Id        int
-	Name      string
-	Surname   string
-	Login     string
-	Password  string
-	Status    bool
-	Prioritet bool
-	User_type bool
+	Id        int    `json:"id" db:"id"`
+	Name      string `json:"name" db:"name"`
+	Surname   string `json:"surname" db:"surname"`
+	Login     string `json:"login" db:"login"`
+	Password  string `json:"password" db:"password"`
+	Status    bool   `json:"status" db:"status"`
+	Prioritet bool   `json:"prioritet" db:"prioritet"`
+	User_type bool   `json:"user_type" db:"user_type"`
 }
 type Smena struct {
-	Id          int
-	User_id     int
-	Started_at  time.Time
-	Finished_at time.Time
+	Id          int       `json:"id" db:"id"`
+	User_id     int       `json:"user_id" db:"user_id"`
+	Started_at  time.Time `json:"started_at" db:"started_at"`
+	Finished_at time.Time `json:"finished_at" db:"finished_at"`
 }
 
 func (s Smena) StartData() string {
@@ -58,7 +58,7 @@ func NewStore(connString string) (*Store, error) {
 // AddNewUser adds new user into users
 func (s *Store) AddNewUser(name, surname, login, password string, status, prioritet, user_type bool) error {
 	_, err := s.conn.ExecContext(s.ctx, `INSERT INTO users(name, surname, login, password, status, prioritet, user_type) 
-														VALUES($1, $2, $3, $4, true, $5, $6);`, name, surname, login, password, prioritet, user_type)
+											VALUES($1, $2, $3, $4, true, $5, $6);`, name, surname, login, password, prioritet, user_type)
 	if err != nil {
 		return fmt.Errorf("found err: %w", err)
 	}
@@ -172,7 +172,7 @@ func (s *Store) ChangeUserStatus(user_id int, status bool) error {
 }
 
 // AddIll do transaction about ill
-func (s *Store) AddIll(user_id int, started_at, finished_at time.Time, coef float32) error {
+func (s *Store) AddIll(user_id int, started_at, finished_at time.Time, coef float64) error {
 	var err error
 	list := []Smena{}
 	err = s.conn.SelectContext(s.ctx, &list, `SELECT id, started_at, finished_at FROM timetable 
@@ -188,13 +188,11 @@ func (s *Store) AddIll(user_id int, started_at, finished_at time.Time, coef floa
 	}
 
 	for _, smena := range list {
-		_, err = s.conn.ExecContext(s.ctx,
-			`BEGIN;
-				INSERT INTO change (smena_id, started_at, finished_at, hoster_id, coef, status)
-				VALUES ($4, $2, $3, 0, $5, false);
-		
-				DELETE FROM timetable WHERE user_id=$1 AND started_at>=$2 AND finished_at<=$3;
-			END;`, user_id, started_at, finished_at, smena.Id, coef)
+		tx := s.conn.MustBegin()
+		tx.MustExec(`INSERT INTO change (smena_id, started_at, finished_at, hoster_id, coef, status)
+						VALUES ($1, $2, $3, 1, $4, false);`, smena.Id, started_at, finished_at, coef)
+		tx.MustExec(`DELETE FROM timetable WHERE user_id=$1 AND started_at>=$2 AND finished_at<=$3;`, user_id, started_at, finished_at)
+		err = tx.Commit()
 
 		if err != nil {
 			return fmt.Errorf("found err: %w", err)

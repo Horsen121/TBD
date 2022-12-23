@@ -20,19 +20,19 @@ CREATE TABLE timetable(
 
 CREATE TABLE ill(
 	id SERIAL PRIMARY KEY,
-	user_id integer REFERENCES users(id),
+	user_id integer REFERENCES users(id) ON DELETE CASCADE,
 	d_start timestamp NOT NULL,
 	d_finish timestamp NOT NULL
 );
 
 CREATE TABLE change(
 	id SERIAL PRIMARY KEY,
-	smena_id integer REFERENCES timetable(id),
+	smena_id integer REFERENCES timetable(id) ON DELETE CASCADE,
 	started_at timestamp,
 	finished_at timestamp,
 	Wanted_start timestamp,
 	Wanted_finish timestamp,
-	hoster_id integer REFERENCES users(id),
+	hoster_id integer REFERENCES users(id) ON DELETE CASCADE,
 	coef REAL CHECK (coef>=1),
 	status boolean
 );

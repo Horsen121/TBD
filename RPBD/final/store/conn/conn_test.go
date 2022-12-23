@@ -249,7 +249,26 @@ func TestGetSmenaList2(t *testing.T) {
 	}
 }
 
-func TestChangeUserStatus(t *testing.T) {
+func TestChangeUserStatusTrue(t *testing.T) {
+	// container, db := CreateDB()
+	// defer container.Terminate(context.Background())
+
+	connString := fmt.Sprintf("postgres://mitiushin:PgDmnANIME10@95.217.232.188:7777/mitiushin")
+	store, err := NewStore(connString)
+	if err != nil {
+		panic(err)
+	}
+
+	// store := Store{
+	// 	conn: db,
+	// }
+
+	if err = store.ChangeUserStatus(1, true); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestChangeUserStatusFalse(t *testing.T) {
 	// container, db := CreateDB()
 	// defer container.Terminate(context.Background())
 
